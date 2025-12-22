@@ -1,0 +1,57 @@
+/* Sidebar fixe */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 16rem; /* 256px */
+    height: 100vh;
+    background-color: white;
+    box-shadow: 4px 0 15px -5px rgba(0, 0, 0, 0.05);
+    z-index: 50;
+}
+
+/* Logo */
+.logo-img {
+    width: 12rem;
+    margin: 0 auto 1.25rem;
+}
+
+/* Liens de la sidebar */
+.sidebar-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+/* Hover */
+.sidebar-link:hover {
+    background: #f1f5f9;
+    color: #06b6d4;
+}
+
+/* État actif */
+.sidebar-link.active {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+}
+
+/* Barre bleue à droite pour l'élément actif */
+.sidebar-link.active::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 70%;
+    background-color: #3b82f6;
+    border-radius: 9999px;
+}
