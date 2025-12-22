@@ -1,127 +1,51 @@
+# docker-compose.yml - Version minimale pour tester Auth-Service uniquement
 services:
-  # ========================
-  # AUTH SERVICE (Dounia)
-  # ========================
+  # Auth Service
   auth-service:
-    build: ./auth-service
+    build: ./Auth-Service
     container_name: auth-service
     ports:
       - "5009:5009"
     environment:
-      - FLASK_ENV=production
-      - USE_DOCKER=true
       - FLASK_HOST=0.0.0.0
       - FLASK_PORT=5009
-      - FLASK_DEBUG=false
-      - SECRET_KEY=clinique2025_auth_secret
-      - PATIENTS_SERVICE_URL=http://patients-backend:5001
-      - DOCTORS_SERVICE_URL=http://doctors-service:5000
-      - RDV_SERVICE_URL=http://rdv-backend:5005
+      - FLASK_DEBUG=true
+      - USE_DOCKER=false  # لأننا نختبر فقط
+      - SECRET_KEY=clinique2025_secure_key
     volumes:
-      - auth-data:/app/instance
-    networks:
-      - medical-network
+      - ./Auth-Service/instance:/app/instance
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5009/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-  # ========================
-  # PATIENTS SERVICE (Asma)
-  # ========================
-  patients-backend:
-    build: ./patient-service/backend
-    container_name: patients-backend
-    ports:
-      - "5001:5001"
-    environment:
-      - FLASK_ENV=production
-      - USE_DOCKER=true
-      - FLASK_HOST=0.0.0.0
-      - FLASK_PORT=5001
-      - FLASK_DEBUG=false
-      - SECRET_KEY=clinique2025_patients_secret
-      - AUTH_SERVICE_URL=http://auth-service:5009
-      - DOCTORS_SERVICE_URL=http://doctors-service:5000
-      - RDV_SERVICE_URL=http://rdv-backend:5005
-    volumes:
-      - patients-data:/app/instance
-      - patients-uploads:/app/static/uploads
-    depends_on:
-      - auth-service
-    networks:
-      - medical-network
-    restart: unless-stopped
-
-  patients-frontend:
-    build: ./patient-service/frontend
-    container_name: patients-frontend
-    ports:
-      - "3001:80"
-    environment:
-      - REACT_APP_API_URL=http://localhost:5001/api
-    depends_on:
-      - patients-backend
-    networks:
-      - medical-network
-    restart: unless-stopped
-
-  # ========================
-  # RDV BACKEND (Hajer)
-  # ========================
-  rdv-backend:
-    build: ./RDV-serviceIHM/backend
-    container_name: rdv-backend
-    ports:
-      - "5005:5005"
-    environment:
-      - FLASK_ENV=production
-      - USE_DOCKER=true
-      - AUTH_SERVICE_URL=http://auth-service:5009
-      - PATIENTS_SERVICE_URL=http://patients-backend:5001
-      - DOCTORS_SERVICE_URL=http://doctors-service:5000
-      - FLASK_HOST=0.0.0.0
-      - FLASK_PORT=5005
-      - FLASK_DEBUG=false
-      - SECRET_KEY=clinique2025_rdv_secret
-    volumes:
-      - rdv-data:/app/instance
-    depends_on:
-      - auth-service
-      - patients-backend
-    networks:
-      - medical-network
-    restart: unless-stopped
-
-  rdv-frontend:
-    build: ./RDV-serviceIHM/frontend
-    container_name: rdv-frontend
-    ports:
-      - "3000:80"
-    environment:
-      - REACT_APP_API_URL=http://localhost:5005/api
-    depends_on:
-      - rdv-backend
-    networks:
-      - medical-network
-    restart: unless-stopped
-
-# ========================
-# NETWORKS
-# ========================
-networks:
-  medical-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.25.0.0/16
-
-# ========================
-# VOLUMES
-# ========================
-volumes:
-  auth-data:
-    driver: local
-  patients-data:
-    driver: local
-  patients-uploads:
-    driver: local
-  rdv-data:
-    driver: local
+# إذا أردت إضافة الخدمات الأخرى لاحقًا، احذف التعليق:
+#
+#  patients-service:
+#    build: ./Patients-Service
+#    container_name: patients-service
+#    ports:
+#      - "5001:5001"
+#    environment:
+#      - FLASK_HOST=0.0.0.0
+#      - FLASK_PORT=5001
+#      - USE_DOCKER=true
+#    volumes:
+#      - ./Patients-Service/instance:/app/instance
+#    restart: unless-stopped
+#
+#  rdv-backend:
+#    build: ./RDV-Service
+#    container_name: rdv-backend
+#    ports:
+#      - "5005:5005"
+#    environment:
+#      - FLASK_HOST=0.0.0.0
+#      - FLASK_PORT=5005
+#      - USE_DOCKER=true
+#    volumes:
+#      - ./RDV-Service/instance:/app/instance
+#    restart: unless-stopped

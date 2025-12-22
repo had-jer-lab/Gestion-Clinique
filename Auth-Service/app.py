@@ -2,21 +2,26 @@ import os
 from flask import Flask, render_template, request, flash, session, redirect, url_for, jsonify
 import sqlite3
 import requests
-import os
 from config import *
 from flask_cors import CORS
 
 app = Flask(__name__)
-app.secret_key = 'clinique2025'
+app.secret_key = os.getenv('SECRET_KEY', 'clinique2025')
+
+# CORS Configuration - More secure for production
 CORS(app, resources={
     r"/*": {
-        "origins": "*",
+        "origins": ["*"],  # In production, specify exact origins
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"]
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
     }
 }) 
+
 DB_PATH = os.path.join("instance", "base.db")
-CLINIQUE_API_URL = "http://100.95.250.126:5000/api/add_doctor"
+
+# Use config.py for service URLs
+CLINIQUE_API_URL = f"{DOCTORS_URL}/api/add_doctor"
  
 def get_db():
     if not os.path.exists("instance"):
@@ -24,10 +29,22 @@ def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
- 
+
+# ===================== Health Check =====================
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Docker"""
+    try:
+        conn = get_db()
+        conn.close()
+        return jsonify({"status": "healthy", "service": "auth-service"}), 200
+    except Exception as e:
+        return jsonify({"status": "unhealthy", "error": str(e)}), 500
+
 # ===================== الصفحات الأساسية =====================
 @app.route('/')
 def accueil():
+    """صفحة الاستقبال الرئيسية"""
     return render_template('accueil.html')
  
 @app.route('/login', methods=['GET', 'POST'])
@@ -41,6 +58,7 @@ def login():
         c = conn.cursor()
  
         if form_type == 'login':
+            # Check users table (Directeur/Secrétaire)
             c.execute("SELECT * FROM users WHERE email=? AND password=?", (email, password))
             user = c.fetchone()
             if user:
@@ -52,6 +70,7 @@ def login():
                 else:
                     return redirect('/secretaire/dashboard')
  
+            # Check medecins table
             c.execute("SELECT * FROM medecins WHERE email=? AND password=?", (email, password))
             med = c.fetchone()
             conn.close()
@@ -59,13 +78,14 @@ def login():
                 session['user'] = dict(med)
                 session['user']['role'] = "Docteur"
                 flash(f"Bienvenue Dr. {med['prenom']} !", "success")
-                return redirect('http://100.95.250.126:5000')
+                # Redirect to doctors service using config
+                return redirect(DOCTORS_URL)
  
             flash("Identifiants invalides.", "error")
             return redirect(url_for('login'))
  
         elif form_type == 'signup':
-            # نفس الكود بتاع إضافة طبيب لكوثر (ما غيرتهوش)
+            # Check if email exists
             c.execute("SELECT * FROM users WHERE email=?", (email,))
             exists1 = c.fetchone()
             c.execute("SELECT * FROM medecins WHERE email=?", (email,))
@@ -75,25 +95,43 @@ def login():
                 flash("Cet email est déjà utilisé.", "error")
                 return redirect(url_for('login'))
  
+            # Prepare API payload for doctors service
             api_payload = {
                 "name": request.form['nom'] + ' ' + request.form['prenom'],
                 "speciality": request.form['specialite'],
                 "status": "Disponible",
                 "patients": 0
             }
+            
             try:
-                response = requests.post(CLINIQUE_API_URL, json=api_payload, timeout=5,
-                                         proxies={'http': None, 'https': None})
+                # Call doctors service API
+                response = requests.post(
+                    CLINIQUE_API_URL, 
+                    json=api_payload, 
+                    timeout=5,
+                    proxies={'http': None, 'https': None}
+                )
                 response.raise_for_status()
-                c.execute("""INSERT INTO medecins (nom, prenom, telephone, email, specialite, password)
-                             VALUES (?, ?, ?, ?, ?, ?)""",
-                          (request.form['nom'], request.form['prenom'], request.form['telephone'],
-                           request.form['email'], request.form['specialite'], request.form['password']))
+                
+                # Insert into local database
+                c.execute("""
+                    INSERT INTO medecins (nom, prenom, telephone, email, specialite, password)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (
+                    request.form['nom'], 
+                    request.form['prenom'], 
+                    request.form['telephone'],
+                    request.form['email'], 
+                    request.form['specialite'], 
+                    request.form['password']
+                ))
                 conn.commit()
-                flash("Compte médecin créé avec succès...", "success")
+                flash("Compte médecin créé avec succès !", "success")
             except requests.exceptions.RequestException as e:
-                flash(f"Erreur API Clinique: {e}", "error")
-            conn.close()
+                flash(f"Erreur lors de la création du compte: {str(e)}", "error")
+            finally:
+                conn.close()
+            
             return redirect(url_for('login'))
  
     return render_template('index.html')
@@ -101,12 +139,14 @@ def login():
 @app.route('/secretaire/dashboard')
 def secretaire_dashboard():
     if session.get('user', {}).get('role') != "Secrétaire":
+        flash("Accès non autorisé", "error")
         return redirect('/')
     return render_template('secretaire_dashboard.html', user=session['user'])
  
 @app.route('/directeur/dashboard')
 def directeur_dashboard():
     if session.get('user', {}).get('role') != "Directeur":
+        flash("Accès non autorisé", "error")
         return redirect('/')
     return render_template('directeur_dashboard.html', user=session['user'])
  
@@ -116,29 +156,45 @@ def logout():
     flash("Déconnexion réussie.", "info")
     return redirect('/')
  
-# ===================== الـ API اللي كنتِ عايزاه (شغال 100%) =====================
+# ===================== API Endpoints =====================
 @app.route('/api/admins')
 def api_admins():
+    """Get all admin users (Directeur/Secrétaire)"""
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT id, nom, prenom, email, password, role FROM users WHERE role IN ('Directeur', 'Secrétaire')")
+    c.execute("""
+        SELECT id, nom, prenom, email, password, role 
+        FROM users 
+        WHERE role IN ('Directeur', 'Secrétaire')
+    """)
     rows = c.fetchall()
     conn.close()
+    
     result = []
     for r in rows:
-        name = f"{r['nom'] or ''} {r['prenom'] or ''}".strip() or "غير معروف"
-        result.append({"id": r['id'], "nom": name, "email": r['email'], "password": r['password'], "role": r['role']})
+        name = f"{r['nom'] or ''} {r['prenom'] or ''}".strip() or "Non défini"
+        result.append({
+            "id": r['id'], 
+            "nom": name, 
+            "email": r['email'], 
+            "password": r['password'], 
+            "role": r['role']
+        })
     return jsonify(result)
  
 @app.route('/api/admins/add', methods=['POST'])
 def add_admin():
-    data = request.get_json()        # ← الصحيح
-    if not data: return jsonify({"error": "no data"}), 400
+    data = request.get_json()
+    if not data: 
+        return jsonify({"error": "No data provided"}), 400
+    
     conn = get_db()
     c = conn.cursor()
     try:
-        c.execute("INSERT INTO users (nom, prenom, email, password, role) VALUES (?, ?, ?, ?, ?)",
-                  (data['nom'], "", data['email'], data['password'], data['role']))
+        c.execute("""
+            INSERT INTO users (nom, prenom, email, password, role) 
+            VALUES (?, ?, ?, ?, ?)
+        """, (data['nom'], "", data['email'], data['password'], data['role']))
         conn.commit()
         return jsonify({"success": True})
     except Exception as e:
@@ -149,12 +205,17 @@ def add_admin():
 @app.route('/api/admins/update', methods=['POST'])
 def update_admin():
     data = request.get_json()
-    if not data or 'id' not in data: return jsonify({"error": "invalid"}), 400
+    if not data or 'id' not in data: 
+        return jsonify({"error": "Invalid data"}), 400
+    
     conn = get_db()
     c = conn.cursor()
     try:
-        c.execute("UPDATE users SET nom=?, email=?, password=?, role=? WHERE id=?",
-                  (data['nom'], data['email'], data['password'], data['role'], data['id']))
+        c.execute("""
+            UPDATE users 
+            SET nom=?, email=?, password=?, role=? 
+            WHERE id=?
+        """, (data['nom'], data['email'], data['password'], data['role'], data['id']))
         conn.commit()
         return jsonify({"success": True})
     except Exception as e:
@@ -170,22 +231,20 @@ def delete_admin(user_id):
         c.execute("DELETE FROM users WHERE id=?", (user_id,))
         conn.commit()
         return jsonify({"success": True})
-    except:
-        return jsonify({"error": "failed"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
     finally:
         conn.close()
  
 @app.route('/api/doctors-count')
 def doctors_count():
+    """Get count of registered doctors"""
     conn = get_db()
     c = conn.cursor()
     c.execute("SELECT COUNT(*) FROM medecins")
     count = c.fetchone()[0]
     conn.close()
     return jsonify({"count": count})
- 
-# =====================================================================
-
 
 @app.route('/api/reset-password', methods=['POST'])
 def reset_password():
@@ -199,18 +258,29 @@ def reset_password():
     conn = get_db()
     c = conn.cursor()
     try:
+        # Try users table first
         c.execute("UPDATE users SET password=? WHERE email=?", (new_password, email))
         if c.rowcount == 0:
-            # لم يتم العثور على المستخدم في users، تحقق من medecins
+            # Try medecins table
             c.execute("UPDATE medecins SET password=? WHERE email=?", (new_password, email))
             if c.rowcount == 0:
                 return jsonify({"success": False, "error": "Email non trouvé"}), 404
         conn.commit()
         return jsonify({"success": True})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": str(e)}), 500
     finally:
         conn.close()
+
+# ===================== Error Handlers =====================
+@app.errorhandler(404)
+def not_found(e):
+    return render_template('accueil.html'), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    return jsonify({"error": "Internal server error"}), 500
+
 if __name__ == '__main__':
     host = os.getenv('FLASK_HOST', '0.0.0.0')
     port = int(os.getenv('FLASK_PORT', 5009))
