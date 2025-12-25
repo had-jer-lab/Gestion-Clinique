@@ -1,78 +1,43 @@
-// ===================================================
-// Configuration partagée pour tous les microservices
-// ===================================================
+import os
 
-// Détection automatique de l'environnement
-const isDevelopment = window.location.hostname === 'localhost' || 
-                      window.location.hostname === '127.0.0.1';
+# ===================================================
+# Configuration partagée pour tous les microservices
+# ===================================================
 
-// URLs des services en développement (localhost)
-const DEV_URLS = {
-  AUTH: 'http://localhost:5009',
-  PATIENTS: 'http://localhost:5001',
-  DOCTORS: 'http://localhost:5000',
-  DOCTORS_FRONTEND: 'http://localhost:3000',
-  RDV: 'http://localhost:5005'
-};
+# Détection de l'environnement
+USE_DOCKER = os.getenv('USE_DOCKER', 'false').lower() == 'true'
 
-// URLs des services avec Tailscale
-const TAILSCALE_URLS = {
-  AUTH: 'http://100.119.228.76:5009',
-  PATIENTS: 'http://100.83.82.128:5001',
-  DOCTORS: 'http://100.95.250.126:5000',
-  DOCTORS_FRONTEND: 'http://100.95.250.126:3000',
-  RDV: 'http://100.125.192.97:5005'
-};
-
-// URLs des services avec Docker
-const DOCKER_URLS = {
-  AUTH: 'http://auth-service:5009',
-  PATIENTS: 'http://patients-service:5001',
-  DOCTORS: 'http://doctors-service:5000',
-  DOCTORS_FRONTEND: 'http://doctors-frontend:3000',
-  RDV: 'http://rdv-backend:5005'
-};
-
-// Sélection de la configuration selon l'environnement
-let ACTIVE_URLS = DEV_URLS;
-
-// Vous pouvez changer ceci manuellement selon votre environnement
-const ENVIRONMENT = 'development'; // 'development' | 'tailscale' | 'docker'
-
-switch(ENVIRONMENT) {
-  case 'tailscale':
-    ACTIVE_URLS = TAILSCALE_URLS;
-    break;
-  case 'docker':
-    ACTIVE_URLS = DOCKER_URLS;
-    break;
-  default:
-    ACTIVE_URLS = DEV_URLS;
+# URLs des services en développement (localhost)
+DEV_URLS = {
+    'AUTH': 'http://localhost:5009',
+    'PATIENTS': 'http://localhost:5001',
+    'DOCTORS': 'http://localhost:5000',
+    'DOCTORS_FRONTEND': 'http://localhost:3000',
+    'RDV': 'http://localhost:5005'
 }
 
-// Export de la configuration
-export const CONFIG = {
-  ENVIRONMENT,
-  URLS: ACTIVE_URLS,
-  
-  // Helper functions
-  getServiceUrl: (serviceName) => {
-    return ACTIVE_URLS[serviceName.toUpperCase()] || ACTIVE_URLS.AUTH;
-  },
-  
-  // Navigation helpers
-  goToService: (serviceName) => {
-    const url = ACTIVE_URLS[serviceName.toUpperCase()];
-    if (url) {
-      window.location.href = url;
-    } else {
-      console.error(`Service ${serviceName} not found`);
-    }
-  },
-  
-  goToHome: () => {
-    window.location.href = ACTIVE_URLS.AUTH;
-  }
-};
+# URLs des services avec Docker (noms de conteneurs)
+DOCKER_URLS = {
+    'AUTH': 'http://auth-service:5009',
+    'PATIENTS': 'http://patients-backend:5001',
+    'DOCTORS': 'http://doctors-service:5000',
+    'DOCTORS_FRONTEND': 'http://doctors-frontend:3000',
+    'RDV': 'http://rdv-backend:5005'
+}
 
-export default CONFIG;
+# Sélection automatique selon l'environnement
+ACTIVE_URLS = DOCKER_URLS if USE_DOCKER else DEV_URLS
+
+# Export des URLs pour utilisation dans l'application
+AUTH_URL = ACTIVE_URLS['AUTH']
+PATIENTS_URL = ACTIVE_URLS['PATIENTS']
+DOCTORS_URL = ACTIVE_URLS['DOCTORS']
+DOCTORS_FRONTEND_URL = ACTIVE_URLS['DOCTORS_FRONTEND']
+RDV_URL = ACTIVE_URLS['RDV']
+
+# Configuration de la base de données
+DATABASE_URI = os.getenv('DATABASE_URI', 'sqlite:///instance/base.db')
+SECRET_KEY = os.getenv('SECRET_KEY', 'clinique2025')
+
+print(f"🔧 Configuration chargée - Mode: {'DOCKER' if USE_DOCKER else 'DEVELOPMENT'}")
+print(f"📍 DOCTORS_URL: {DOCTORS_URL}")

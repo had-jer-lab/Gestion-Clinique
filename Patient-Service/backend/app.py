@@ -18,7 +18,7 @@ app.secret_key = os.getenv('SECRET_KEY', 'clinique2025')
 # CORS configuration for React frontend
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000"],
+        "origins": ["*"],  # En développement
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"]
     }
@@ -362,4 +362,4 @@ def internal_error(error):
 
 if __name__ == '__main__':
     
-    app.run(host="localhost", port=5001, debug=True)
+    app.run(host=0.0.0.0, port=5001, debug=True)

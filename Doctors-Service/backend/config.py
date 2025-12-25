@@ -1,29 +1,59 @@
-# Fichier : config.py
-# ==========================================================
+import os
 
-# Configuration des adresses des microservices
+# ===================================================
+# Configuration partagée pour le microservice Doctors
+# ===================================================
 
-# تفعيل أو تعطيل استعمال Tailscale
-USE_TAILSCALE = True
+# Détection automatique de l'environnement
+USE_DOCKER = os.getenv('USE_DOCKER', 'false').lower() == 'true'
+USE_TAILSCALE = os.getenv('USE_TAILSCALE', 'false').lower() == 'true'
 
-# عناوين خدمات Tailscale (Doivent correspondre aux adresses IP de vos amis)
+# URLs des services avec Tailscale
 TAILSCALE_IPS = {
-    "auth_url":  "http://100.119.228.76:5009",  # dounia
-    "PATIENTS":  "http://100.83.82.128:5001",   # asma
-    "DOCTORS":   "http://100.95.250.126:5000",  # kawthar (votre propre microservice)
-    "RDV":       "http://100.125.192.97:5005",  # hajir (RDV + Factures)
+    "AUTH": "http://100.119.228.76:5009",
+    "PATIENTS": "http://100.83.82.128:5001",
+    "DOCTORS": "http://100.95.250.126:5000",
+    "RDV": "http://100.125.192.97:5005",
 }
 
-# Définition des URLs utilisées dans app.py
-if USE_TAILSCALE:
-    AUTH_URL     = TAILSCALE_IPS["auth_url"]
+# URLs en développement local
+LOCAL_URLS = {
+    "AUTH": "http://127.0.0.1:5009",
+    "PATIENTS": "http://127.0.0.1:5001",
+    "DOCTORS": "http://127.0.0.1:5000",
+    "RDV": "http://127.0.0.1:5005",
+}
+
+# URLs avec Docker (noms de conteneurs)
+DOCKER_URLS = {
+    "AUTH": "http://auth-service:5009",
+    "PATIENTS": "http://patients-backend:5001",
+    "DOCTORS": "http://doctors-service:5000",
+    "RDV": "http://rdv-backend:5005",
+}
+
+# Sélection de la configuration selon l'environnement
+if USE_DOCKER:
+    print("🐳 Mode DOCKER activé")
+    AUTH_URL = DOCKER_URLS["AUTH"]
+    PATIENTS_URL = DOCKER_URLS["PATIENTS"]
+    DOCTORS_URL = DOCKER_URLS["DOCTORS"]
+    RDV_URL = DOCKER_URLS["RDV"]
+elif USE_TAILSCALE:
+    print("🔗 Mode TAILSCALE activé")
+    AUTH_URL = TAILSCALE_IPS["AUTH"]
     PATIENTS_URL = TAILSCALE_IPS["PATIENTS"]
-    DOCTORS_URL  = TAILSCALE_IPS["DOCTORS"]
-    RDV_URL      = TAILSCALE_IPS["RDV"]
-    
+    DOCTORS_URL = TAILSCALE_IPS["DOCTORS"]
+    RDV_URL = TAILSCALE_IPS["RDV"]
 else:
-    # URL de secours pour le développement local
-    AUTH_URL     = "http://127.0.0.1:5009"
-    PATIENTS_URL = "http://127.0.0.1:5001"
-    DOCTORS_URL  = "http://127.0.0.1:5000"
-    RDV_URL      = "http://127.0.0.1:5005"
+    print("💻 Mode DÉVELOPPEMENT LOCAL activé")
+    AUTH_URL = LOCAL_URLS["AUTH"]
+    PATIENTS_URL = LOCAL_URLS["PATIENTS"]
+    DOCTORS_URL = LOCAL_URLS["DOCTORS"]
+    RDV_URL = LOCAL_URLS["RDV"]
+
+print(f"📍 Configuration chargée:")
+print(f"   - AUTH_URL: {AUTH_URL}")
+print(f"   - PATIENTS_URL: {PATIENTS_URL}")
+print(f"   - DOCTORS_URL: {DOCTORS_URL}")
+print(f"   - RDV_URL: {RDV_URL}")

@@ -2,17 +2,20 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# نسخ ملفات package
+# Copier package files
 COPY package*.json ./
 
-# تثبيت المكتبات
-RUN npm install
+# Installer les dépendances
+RUN npm ci --legacy-peer-deps
 
-# نسخ باقي الملفات
+# Copier le reste des fichiers
 COPY . .
 
-# فتح المنفذ
+# Exposer le port
 EXPOSE 3000
 
-# تشغيل التطبيق
+# Variable d'environnement par défaut
+ENV REACT_APP_API_URL=http://localhost:5001/api
+
+# Démarrer l'application
 CMD ["npm", "start"]

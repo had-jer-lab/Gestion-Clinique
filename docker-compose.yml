@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # Auth Service
   auth-service:
@@ -20,7 +22,7 @@ services:
   # Patient Service - Backend
   patient-backend:
     build: ./Patient-Service/backend
-    container_name: patients-backend
+    container_name: patient-backend
     ports:
       - "5001:5001"
     environment:
@@ -28,6 +30,8 @@ services:
       - FLASK_ENV=development
       - USE_DOCKER=true
       - AUTH_SERVICE_URL=http://auth-service:5009
+      - DOCTORS_SERVICE_URL=http://doctors-service:5000
+      - RDV_SERVICE_URL=http://rdv-backend:5005
       - SECRET_KEY=${SECRET_KEY:-clinique2025}
       - DATABASE_URI=${DATABASE_URI:-sqlite:///clinique.db}
     networks:
@@ -36,25 +40,28 @@ services:
       - auth-service
     volumes:
       - ./Patient-Service/backend:/app
+      - patient-uploads:/app/static/uploads
     restart: unless-stopped
 
-  # Patient Service - Frontend (React)
+  # Patient Service - Frontend
   patient-frontend:
     build: ./Patient-Service/frontend
     container_name: patient-frontend
     ports:
       - "3001:3000"
     environment:
-      - REACT_APP_API_URL=http://localhost:5001
+      - REACT_APP_API_URL=http://localhost:5001/api
       - REACT_APP_AUTH_URL=http://localhost:5009
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
     networks:
       - clinic-network
     depends_on:
       - patient-backend
     volumes:
       - ./Patient-Service/frontend:/app
+      - /app/node_modules
     stdin_open: true
     tty: true
     restart: unless-stopped
@@ -83,23 +90,25 @@ services:
       - ./RDV-Service/backend:/app
     restart: unless-stopped
 
-  # RDV Service - Frontend (React)
+  # RDV Service - Frontend
   rdv-frontend:
     build: ./RDV-Service/frontend
     container_name: rdv-frontend
     ports:
       - "3002:3000"
     environment:
-      - REACT_APP_API_URL=http://localhost:5005
+      - REACT_APP_API_URL=http://localhost:5005/api
       - REACT_APP_AUTH_URL=http://localhost:5009
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
     networks:
       - clinic-network
     depends_on:
       - rdv-backend
     volumes:
       - ./RDV-Service/frontend:/app
+      - /app/node_modules
     stdin_open: true
     tty: true
     restart: unless-stopped
@@ -132,16 +141,18 @@ services:
     ports:
       - "3003:3000"
     environment:
-      - REACT_APP_API_URL=http://localhost:5000
+      - REACT_APP_API_URL=http://localhost:5000/api
       - REACT_APP_AUTH_URL=http://localhost:5009
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
     networks:
       - clinic-network
     depends_on:
       - doctors-service
     volumes:
       - ./Doctors-Service/frontend:/app
+      - /app/node_modules
     stdin_open: true
     tty: true
     restart: unless-stopped
@@ -150,3 +161,6 @@ networks:
   clinic-network:
     driver: bridge
     name: clinic-network
+
+volumes:
+  patient-uploads:

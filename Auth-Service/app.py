@@ -29,9 +29,6 @@ def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
-@app.route("/health")
-def health():
-    return {"status": "ok"}, 200
 
 # ===================== Health Check =====================
 @app.route('/health')

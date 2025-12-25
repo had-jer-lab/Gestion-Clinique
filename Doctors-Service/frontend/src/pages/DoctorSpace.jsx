@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { CalendarCheck, Info, Loader, Clock, User, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import axios from 'axios';
-
-const API_URL = 'http://localhost:5000/api';
-const PATIENTS_URL = 'http://100.83.82.128:5001';
+import { API_URL, PATIENTS_URL } from '../config';
+//const API_URL = 'http://localhost:5000/api';
+//const PATIENTS_URL = 'http://100.83.82.128:5001';
 
 function DoctorSpace() {
   const [appointments, setAppointments] = useState([]);
