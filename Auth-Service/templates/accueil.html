@@ -15,6 +15,14 @@
         .gradient-bg {
             background: linear-gradient(135deg, #3b82f6, #6366f1);
         }
+
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
     </style>
 </head>
  
@@ -23,7 +31,7 @@
     <!-- Header -->
     <header class="bg-white shadow-md py-4 px-8 flex justify-between items-center">
         <div class="flex items-center space-x-6">
-            <h1 class="text-2xl font-bold text-blue-600">Clinique</h1>
+            <h1 class="text-2xl font-bold text-blue-600">Clinique MediCare</h1>
             <p class="text-gray-600">📞 +212 123 456 789</p>
             <p class="text-gray-600">✉ contact@clinique.com</p>
         </div>
@@ -37,7 +45,7 @@
         <!-- Texte -->
         <div class="md:w-1/2 space-y-6">
             <h2 class="text-5xl font-bold text-blue-700 leading-tight">Système de Gestion de Cabinet Médical</h2>
-            <p class="text-gray-700 text-lg">Organisez vos rendez-vous, gérez vos patients et suivez l’activité de
+            <p class="text-gray-700 text-lg">Organisez vos rendez-vous, gérez vos patients et suivez l'activité de
                 votre clinique facilement avec notre application moderne.</p>
             <div class="flex gap-4">
                 <a href="/login"
@@ -56,27 +64,83 @@
  
     <!-- Services Section -->
     <section id="services" class="max-w-6xl mx-auto px-8 py-20 grid md:grid-cols-3 gap-10">
-        <div class="bg-white p-8 rounded-2xl shadow-lg text-center hover:scale-105 transition">
+        <!-- Gestion des Rendez-vous -->
+        <div class="feature-card bg-white p-8 rounded-2xl shadow-lg text-center hover:scale-105 transition cursor-pointer"
+             onclick="window.location.href='http://localhost:5005'">
             <div class="text-4xl mb-4">📅</div>
             <h3 class="text-2xl font-bold mb-2">Gestion des rendez-vous</h3>
             <p class="text-gray-600">Planifiez et suivez facilement tous les rendez-vous de vos patients.</p>
         </div>
-        <div class="bg-white p-8 rounded-2xl shadow-lg text-center hover:scale-105 transition">
+
+        <!-- Gestion des Patients -->
+        <div class="feature-card bg-white p-8 rounded-2xl shadow-lg text-center hover:scale-105 transition cursor-pointer"
+             onclick="window.location.href='http://localhost:5001'">
             <div class="text-4xl mb-4">👩‍⚕️</div>
             <h3 class="text-2xl font-bold mb-2">Gestion des patients</h3>
             <p class="text-gray-600">Accédez à toutes les informations importantes sur vos patients rapidement.</p>
         </div>
-        <div class="bg-white p-8 rounded-2xl shadow-lg text-center hover:scale-105 transition">
+
+        <!-- Gestion des Médecins -->
+        <div class="feature-card bg-white p-8 rounded-2xl shadow-lg text-center hover:scale-105 transition cursor-pointer"
+             onclick="window.location.href='http://localhost:3000'">
+            <div class="text-4xl mb-4">🧑‍⚕️</div>
+            <h3 class="text-2xl font-bold mb-2">Gestion des médecins</h3>
+            <p class="text-gray-600">Gérez les médecins, leurs spécialités et disponibilités.</p>
+        </div>
+
+        <!-- Tableau de Bord -->
+        <div class="feature-card bg-white p-8 rounded-2xl shadow-lg text-center hover:scale-105 transition cursor-pointer"
+             onclick="window.location.href='/directeur/dashboard'">
             <div class="text-4xl mb-4">📊</div>
-            <h3 class="text-2xl font-bold mb-2">Suivi d’activité</h3>
-            <p class="text-gray-600">Obtenez des statistiques et rapports détaillés sur votre cabinet médical.</p>
+            <h3 class="text-2xl font-bold mb-2">Tableau de Bord</h3>
+            <p class="text-gray-600">Visualisez toutes vos statistiques en temps réel.</p>
+        </div>
+
+        <!-- Factures -->
+        <div class="feature-card bg-white p-8 rounded-2xl shadow-lg text-center hover:scale-105 transition cursor-pointer"
+             onclick="window.location.href='http://localhost:5005/factures'">
+            <div class="text-4xl mb-4">💰</div>
+            <h3 class="text-2xl font-bold mb-2">Gestion des Factures</h3>
+            <p class="text-gray-600">Suivez et gérez toutes vos factures médicales.</p>
+        </div>
+
+        <!-- Ordonnances -->
+        <div class="feature-card bg-white p-8 rounded-2xl shadow-lg text-center hover:scale-105 transition cursor-pointer"
+             onclick="window.location.href='http://localhost:5001/ordonnances'">
+            <div class="text-4xl mb-4">📋</div>
+            <h3 class="text-2xl font-bold mb-2">Ordonnances</h3>
+            <p class="text-gray-600">Créez et gérez les ordonnances de vos patients.</p>
+        </div>
+    </section>
+
+    <!-- Engagements Section -->
+    <section class="bg-white py-16">
+        <div class="max-w-6xl mx-auto px-8">
+            <h2 class="text-4xl font-bold text-center text-gray-800 mb-12">Nos Engagements</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="text-5xl mb-4">🔒</div>
+                    <h3 class="text-xl font-bold mb-2">Sécurité des données</h3>
+                    <p class="text-gray-600">Vos données médicales sont protégées par cryptage avancé.</p>
+                </div>
+                <div class="text-center">
+                    <div class="text-5xl mb-4">❤️</div>
+                    <h3 class="text-xl font-bold mb-2">Accès aux spécialistes</h3>
+                    <p class="text-gray-600">Connectez-vous avec des médecins qualifiés rapidement.</p>
+                </div>
+                <div class="text-center">
+                    <div class="text-5xl mb-4">📈</div>
+                    <h3 class="text-xl font-bold mb-2">Suivi personnalisé</h3>
+                    <p class="text-gray-600">Suivez votre santé avec des outils adaptés à vos besoins.</p>
+                </div>
+            </div>
         </div>
     </section>
  
     <!-- Footer -->
     <footer class="bg-blue-700 text-white py-8 mt-20">
         <div class="max-w-6xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center">
-            <p>© 2025 Clinique. Tous droits réservés.</p>
+            <p>© 2025 Clinique MediCare. Tous droits réservés.</p>
             <div class="flex gap-6 mt-4 md:mt-0">
                 <a href="mailto:contact@clinique.com" class="hover:underline">contact@clinique.com</a>
                 <a href="tel:+212123456789" class="hover:underline">+212 123 456 789</a>

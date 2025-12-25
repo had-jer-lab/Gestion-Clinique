@@ -4,21 +4,23 @@ from flask_cors import CORS
 from datetime import datetime
 from flask_migrate import Migrate
 import requests
+import os
 from config import AUTH_URL, PATIENTS_URL, DOCTORS_URL
 
 app = Flask(__name__)
-app.secret_key = 'clinique2025'
+app.secret_key = os.getenv('SECRET_KEY', 'clinique2025')
 
-# CORS configuration for React frontend
+# CORS configuration - Allow all origins in Docker
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:3000", "http://localhost:5173"],
+        "origins": "*",  # Allow all origins in Docker
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"]
     }
 })
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///clinique.db'
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'sqlite:///clinique.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -359,6 +361,16 @@ def get_config():
         'doctors_url': DOCTORS_URL
     })
 
+# Health check endpoint
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for Docker"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'rdv-service',
+        'version': '1.0.0'
+    })
+
 # ========================
 # ERROR HANDLERS
 # ========================
@@ -373,4 +385,9 @@ def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == "__main__":
-    app.run(host="localhost", port=5005, debug=True)
+    # Get host and port from environment variables
+    host = os.getenv('FLASK_HOST', '0.0.0.0')
+    port = int(os.getenv('FLASK_PORT', 5005))
+    debug = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
+    
+    app.run(host=host, port=port, debug=debug)

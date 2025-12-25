@@ -8,6 +8,7 @@
     background-color: white;
     box-shadow: 4px 0 15px -5px rgba(0, 0, 0, 0.05);
     z-index: 50;
+    overflow-y: auto;
 }
 
 /* Logo */

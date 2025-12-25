@@ -1,201 +1,346 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Users, Plus, Edit, Trash2 } from 'lucide-react';
+import { CalendarCheck, Info, Loader, Clock, User, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
+const PATIENTS_URL = 'http://100.83.82.128:5001';
 
-function ManageDoctors() {
-  const navigate = useNavigate();
-  const [doctors, setDoctors] = useState([]);
+function DoctorSpace() {
+  const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
-    fetchDoctors();
+    fetchAppointments();
   }, []);
 
-  const fetchDoctors = async () => {
+  const fetchAppointments = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/doctors`);
-      setDoctors(response.data);
+      const response = await axios.get(`${API_URL}/appointments`);
+      setAppointments(response.data);
     } catch (error) {
-      console.error('Error fetching doctors:', error);
+      console.error('Error fetching appointments:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce médecin ?')) {
-      return;
+  const getStatusConfig = (status) => {
+    if (status === 'Confirmé' || status.toLowerCase().includes('confirm')) {
+      return {
+        className: 'bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border-green-200',
+        icon: CheckCircle,
+        iconColor: '#10b981'
+      };
     }
-
-    setDeletingId(id);
-    try {
-      await axios.delete(`${API_URL}/doctors/${id}`);
-      setDoctors(doctors.filter(d => d.id !== id));
-    } catch (error) {
-      console.error('Error deleting doctor:', error);
-      alert('Erreur lors de la suppression du médecin');
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  const handleEdit = (id) => {
-    navigate(`/doctor/edit/${id}`);
-  };
-
-  const handleAdd = () => {
-    navigate('/doctor/add');
-  };
-
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case 'Disponible':
-        return 'bg-green-100 text-green-800 border-green-300';
-      case 'En Consultation':
-        return 'bg-blue-100 text-blue-800 border-blue-300';
-      case 'Congé':
-        return 'bg-gray-100 text-gray-800 border-gray-300';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-300';
-    }
+    return {
+      className: 'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 border-amber-200',
+      icon: AlertCircle,
+      iconColor: '#f59e0b'
+    };
   };
 
   return (
-    <div className="p-8">
+    <div className="min-h-screen p-8" style={{ background: 'linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%)' }}>
       <style>{`
-        .skeleton-row {
+        .appointment-card {
+          background: white;
+          border-radius: 16px;
+          padding: 20px 24px;
+          margin-bottom: 14px;
+          border: 1px solid rgba(226, 232, 240, 0.6);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+
+        .appointment-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+          border-color: #06b6d4;
+        }
+
+        .time-badge {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+          color: white;
+          padding: 12px 20px;
+          border-radius: 12px;
+          font-size: 20px;
+          font-weight: 800;
+          min-width: 120px;
+          box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+        }
+
+        .patient-info {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .patient-name {
+          font-size: 17px;
+          font-weight: 700;
+          color: #0f172a;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .patient-name a {
+          color: inherit;
+          text-decoration: none;
+          transition: color 0.2s;
+        }
+
+        .patient-name a:hover {
+          color: #06b6d4;
+        }
+
+        .reason-text {
+          font-size: 14px;
+          color: #64748b;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .doctor-info {
+          font-size: 15px;
+          font-weight: 600;
+          color: #0891b2;
+          padding: 8px 16px;
+          background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
+          border-radius: 10px;
+          border: 1px solid #a5f3fc;
+        }
+
+        .status-badge {
+          padding: 8px 18px;
+          border-radius: 20px;
+          font-size: 13px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          border: 2px solid;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          min-width: 140px;
+          justify-content: center;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .skeleton {
           background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
           background-size: 200% 100%;
           animation: loading 1.5s infinite;
-          border-radius: 8px;
-          height: 60px;
+          border-radius: 16px;
+          height: 90px;
+          margin-bottom: 14px;
         }
+
         @keyframes loading {
           0% { background-position: 200% 0; }
           100% { background-position: -200% 0; }
         }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .page-header {
+          background: white;
+          border-radius: 20px;
+          padding: 32px;
+          margin-bottom: 32px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+          border: 1px solid rgba(226, 232, 240, 0.6);
+        }
+
+        .header-title {
+          font-size: 36px;
+          font-weight: 900;
+          background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .appointments-count {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+          color: white;
+          padding: 8px 20px;
+          border-radius: 20px;
+          font-size: 16px;
+          font-weight: 700;
+          box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+        }
+
+        .empty-state {
+          background: white;
+          border-radius: 20px;
+          padding: 80px 40px;
+          text-align: center;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+          border: 2px dashed #cbd5e1;
+        }
+
+        .empty-state-icon {
+          width: 80px;
+          height: 80px;
+          background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 24px;
+        }
       `}</style>
 
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 flex items-center">
-          <Users className="mr-3 text-teal-500" />
-          Liste des Médecins ({doctors.length})
+      <div className="page-header">
+        <h1 className="header-title">
+          <CalendarCheck size={40} style={{ color: '#06b6d4' }} />
+          Espace Docteur
         </h1>
-        <button
-          onClick={handleAdd}
-          className="flex items-center px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors shadow-md"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Ajouter un Médecin
-        </button>
+        <p style={{ fontSize: '16px', color: '#64748b', marginTop: '8px' }}>
+          Gérez vos rendez-vous du jour en temps réel
+        </p>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Nom
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Spécialité
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Statut
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Patients
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {loading ? (
-              // Skeleton loading rows
-              <>
-                <tr><td colSpan="5" className="px-6 py-4"><div className="skeleton-row"></div></td></tr>
-                <tr><td colSpan="5" className="px-6 py-4"><div className="skeleton-row"></div></td></tr>
-                <tr><td colSpan="5" className="px-6 py-4"><div className="skeleton-row"></div></td></tr>
-              </>
-            ) : doctors.length === 0 ? (
-              <tr>
-                <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                  Aucun médecin trouvé. Cliquez sur "Ajouter un Médecin" pour commencer.
-                </td>
-              </tr>
-            ) : (
-              doctors.map((doctor) => (
-                <tr key={doctor.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 bg-teal-100 rounded-full flex items-center justify-center">
-                        <span className="text-teal-600 font-semibold">
-                          {doctor.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          Dr. {doctor.name}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{doctor.speciality}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusBadgeClass(doctor.status)}`}>
-                      {doctor.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {doctor.patients || 0}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleEdit(doctor.id)}
-                      className="text-teal-600 hover:text-teal-900 mr-4 inline-flex items-center"
-                      title="Modifier"
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Modifier
-                    </button>
-                    <button
-                      onClick={() => handleDelete(doctor.id)}
-                      disabled={deletingId === doctor.id}
-                      className="text-red-600 hover:text-red-900 inline-flex items-center disabled:opacity-50"
-                      title="Supprimer"
-                    >
-                      {deletingId === doctor.id ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600 mr-1"></div>
-                          Suppression...
-                        </>
-                      ) : (
-                        <>
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Supprimer
-                        </>
-                      )}
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      <div style={{ 
+        background: 'white', 
+        borderRadius: '20px', 
+        padding: '32px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+        border: '1px solid rgba(226, 232, 240, 0.6)'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          marginBottom: '28px',
+          paddingBottom: '20px',
+          borderBottom: '2px solid #f1f5f9'
+        }}>
+          <h2 style={{ 
+            fontSize: '24px', 
+            fontWeight: '800', 
+            color: '#0f172a',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <Clock size={24} style={{ color: '#06b6d4' }} />
+            Rendez-vous du Jour
+          </h2>
+          {loading ? (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              color: '#06b6d4',
+              fontSize: '14px',
+              fontWeight: '600'
+            }}>
+              <Loader 
+                size={20} 
+                style={{ animation: 'spin 1s linear infinite' }} 
+              />
+              Chargement...
+            </div>
+          ) : (
+            <span className="appointments-count">
+              <CalendarCheck size={18} />
+              {appointments.length} Rendez-vous
+            </span>
+          )}
+        </div>
+
+        {loading ? (
+          <>
+            <div className="skeleton"></div>
+            <div className="skeleton"></div>
+            <div className="skeleton"></div>
+          </>
+        ) : appointments.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">
+              <Info size={40} style={{ color: '#94a3b8' }} />
+            </div>
+            <h3 style={{ 
+              fontSize: '20px', 
+              fontWeight: '700', 
+              color: '#475569',
+              marginBottom: '8px'
+            }}>
+              Aucun rendez-vous prévu
+            </h3>
+            <p style={{ color: '#94a3b8', fontSize: '15px' }}>
+              Il n'y a pas de rendez-vous programmés pour aujourd'hui.
+            </p>
+          </div>
+        ) : (
+          appointments.map((appt, index) => {
+            const statusConfig = getStatusConfig(appt.status);
+            const StatusIcon = statusConfig.icon;
+
+            return (
+              <div key={index} className="appointment-card">
+                <div className="time-badge">
+                  <Clock size={20} />
+                  {appt.time}
+                </div>
+
+                <div className="patient-info">
+                  <div className="patient-name">
+                    <User size={18} style={{ color: '#06b6d4' }} />
+                    {appt.patient_id && appt.patient_id !== 'INCONNU' ? (
+                      <a 
+                        href={`${PATIENTS_URL}/patient/${appt.patient_id}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        {appt.patient}
+                      </a>
+                    ) : (
+                      <span style={{ color: '#64748b' }}>{appt.patient}</span>
+                    )}
+                  </div>
+                  <div className="reason-text">
+                    <FileText size={16} style={{ color: '#94a3b8' }} />
+                    {appt.reason}
+                  </div>
+                </div>
+
+                <div className="doctor-info">
+                  {appt.doctor_name}
+                </div>
+
+                <div className={`status-badge ${statusConfig.className}`}>
+                  <StatusIcon size={16} style={{ color: statusConfig.iconColor }} />
+                  {appt.status}
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
 }
 
-export default ManageDoctors;
+export default DoctorSpace;

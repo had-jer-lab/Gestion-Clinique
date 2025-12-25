@@ -1,7 +1,16 @@
 import axios from 'axios';
 
-// Use the proxy configured in package.json for development
-const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+// Determine API base URL based on environment
+const getApiBaseUrl = () => {
+  // In Docker, use the backend service name
+  if (process.env.NODE_ENV === 'production') {
+    return 'http://rdv-backend:5005/api';
+  }
+  // In development, use localhost or proxy
+  return process.env.REACT_APP_API_URL || 'http://localhost:5005/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -97,10 +106,15 @@ export const configAPI = {
 // ========================
 
 export const externalAPI = {
-  // Get all patients
+  // Get all patients - with fallback for different environments
   getPatients: async (patientsUrl) => {
     try {
-      const response = await axios.get(`${patientsUrl}/api/patients`, { 
+      // Handle both Docker internal and external URLs
+      const url = patientsUrl.startsWith('http://patients-backend')
+        ? patientsUrl
+        : patientsUrl.replace('http://localhost', 'http://patients-backend');
+      
+      const response = await axios.get(`${url}/api/patients`, { 
         timeout: 5000,
         headers: {
           'Accept': 'application/json'
@@ -113,10 +127,15 @@ export const externalAPI = {
     }
   },
   
-  // Get all doctors
+  // Get all doctors - with fallback for different environments
   getDoctors: async (doctorsUrl) => {
     try {
-      const response = await axios.get(`${doctorsUrl}/api/doctors`, { 
+      // Handle both Docker internal and external URLs
+      const url = doctorsUrl.startsWith('http://doctors-service')
+        ? doctorsUrl
+        : doctorsUrl.replace('http://localhost', 'http://doctors-service');
+      
+      const response = await axios.get(`${url}/api/doctors`, { 
         timeout: 5000,
         headers: {
           'Accept': 'application/json'

@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Calendar, UserCog, Home } from 'lucide-react';
-import HomePage from './components/HomePage';
+import { Calendar, UserCog, Home, ArrowLeft } from 'lucide-react';
 import ManageDoctors from './pages/ManageDoctors';
 import DoctorSpace from './pages/DoctorSpace';
 import EditDoctor from './pages/EditDoctor';
@@ -14,11 +13,6 @@ function Sidebar() {
     return location.pathname === path || location.pathname.startsWith(path);
   };
 
-  // Ne pas afficher la sidebar sur la page d'accueil
-  if (location.pathname === '/') {
-    return null;
-  }
-
   return (
     <aside className="sidebar bg-white w-64 p-4 flex flex-col h-screen fixed left-0 top-0 z-50 shadow-lg">
       <img 
@@ -28,16 +22,14 @@ function Sidebar() {
       />
       
       <nav className="flex-grow space-y-3">
-        {/* Lien vers l'accueil */}
-        <Link 
-          to="/" 
-          className={`sidebar-link flex items-center p-3 rounded-xl transition-all ${
-            location.pathname === '/' ? 'active' : ''
-          }`}
+        {/* Lien vers la page d'accueil principale (Auth Service) */}
+        <a 
+          href="http://localhost:5009/"
+          className="sidebar-link flex items-center p-3 rounded-xl transition-all"
         >
           <Home className="w-5 h-5 mr-3" />
-          Accueil
-        </Link>
+          Accueil Principal
+        </a>
 
         {/* Gestion Médecins */}
         <Link 
@@ -60,55 +52,58 @@ function Sidebar() {
           <Calendar className="w-5 h-5 mr-3" />
           Espace Docteur
         </Link>
+
+        {/* Liens vers autres services */}
+        <div className="mt-8 pt-8 border-t border-gray-200">
+          <p className="text-xs text-gray-500 uppercase font-semibold mb-3 px-3">Autres Services</p>
+          
+          <a 
+            href="http://localhost:5001"
+            className="sidebar-link flex items-center p-3 rounded-xl transition-all"
+          >
+            👥 Patients
+          </a>
+
+          <a 
+            href="http://localhost:5005"
+            className="sidebar-link flex items-center p-3 rounded-xl transition-all"
+          >
+            📅 Rendez-vous
+          </a>
+        </div>
       </nav>
     </aside>
-  );
-}
-
-// Composant wrapper pour appliquer le style correct
-function LayoutWrapper({ children }) {
-  const location = useLocation();
-  const isHomePage = location.pathname === '/';
-
-  return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <Sidebar />
-      
-      {/* Contenu principal avec marge conditionnelle */}
-      <div 
-        className="flex-grow transition-all duration-300"
-        style={{ 
-          marginLeft: isHomePage ? '0' : '16rem', // 256px = w-64
-          width: isHomePage ? '100%' : 'calc(100% - 16rem)'
-        }}
-      >
-        <main className="p-8">
-          {children}
-        </main>
-      </div>
-    </div>
   );
 }
 
 function App() {
   return (
     <Router>
-      <LayoutWrapper>
-        <Routes>
-          {/* Page d'accueil (SANS sidebar) */}
-          <Route path="/" element={<HomePage />} />
-          
-          {/* Pages avec sidebar */}
-          <Route path="/manage-doctors" element={<ManageDoctors />} />
-          <Route path="/doctor-space" element={<DoctorSpace />} />
-          <Route path="/doctor/add" element={<EditDoctor />} />
-          <Route path="/doctor/edit/:id" element={<EditDoctor />} />
-          <Route path="/patient/:id" element={<PatientDetail />} />
-          
-          {/* Route par défaut */}
-          <Route path="*" element={<HomePage />} />
-        </Routes>
-      </LayoutWrapper>
+      <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <Sidebar />
+        
+        <div 
+          className="flex-grow transition-all duration-300"
+          style={{ 
+            marginLeft: '16rem',
+            width: 'calc(100% - 16rem)'
+          }}
+        >
+          <main className="p-8">
+            <Routes>
+              <Route path="/" element={<ManageDoctors />} />
+              <Route path="/manage-doctors" element={<ManageDoctors />} />
+              <Route path="/doctor-space" element={<DoctorSpace />} />
+              <Route path="/doctor/add" element={<EditDoctor />} />
+              <Route path="/doctor/edit/:id" element={<EditDoctor />} />
+              <Route path="/patient/:id" element={<PatientDetail />} />
+              
+              {/* Route par défaut */}
+              <Route path="*" element={<ManageDoctors />} />
+            </Routes>
+          </main>
+        </div>
+      </div>
     </Router>
   );
 }

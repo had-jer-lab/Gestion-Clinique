@@ -29,6 +29,9 @@ def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+@app.route("/health")
+def health():
+    return {"status": "ok"}, 200
 
 # ===================== Health Check =====================
 @app.route('/health')
@@ -42,6 +45,33 @@ def health_check():
         return jsonify({"status": "unhealthy", "error": str(e)}), 500
 
 # ===================== الصفحات الأساسية =====================
+@app.route('/')
+@app.route('/accueil')
+def accueil():
+    """صفحة الاستقبال الرئيسية الموحدة"""
+    return render_template('accueil.html')
+
+# تحديث route الصفحة القديمة لتوجيهها إلى الصفحة الموحدة
+@app.route('/home')
+def home_redirect():
+    """توجيه إلى الصفحة الرئيسية الموحدة"""
+    return redirect(url_for('accueil'))
+
+# إضافة routes للوصول السريع إلى الخدمات الأخرى
+@app.route('/goto/doctors')
+def goto_doctors():
+    """توجيه إلى خدمة الأطباء"""
+    return redirect('http://localhost:3000')
+
+@app.route('/goto/patients')
+def goto_patients():
+    """توجيه إلى خدمة المرضى"""
+    return redirect('http://localhost:5001')
+
+@app.route('/goto/rdv')
+def goto_rdv():
+    """توجيه إلى خدمة المواعيد"""
+    return redirect('http://localhost:5005')
 @app.route('/')
 def accueil():
     """صفحة الاستقبال الرئيسية"""

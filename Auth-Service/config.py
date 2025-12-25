@@ -1,39 +1,78 @@
-# ----------------------------
-# config.py - Auth Service
-# ----------------------------
-import os
+// ===================================================
+// Configuration partagée pour tous les microservices
+// ===================================================
 
-# Check if running in Docker
-USE_DOCKER = os.getenv('USE_DOCKER', 'false').lower() == 'true'
+// Détection automatique de l'environnement
+const isDevelopment = window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1';
 
-if USE_DOCKER:
-    # Docker service names (for inter-container communication)
-    AUTH_URL = os.getenv('AUTH_SERVICE_URL', 'http://auth-service:5009')
-    PATIENTS_URL = os.getenv('PATIENTS_SERVICE_URL', 'http://patients-service:5001')
-    DOCTORS_URL = os.getenv('DOCTORS_SERVICE_URL', 'http://doctors-service:5000')
-    RDV_URL = os.getenv('RDV_SERVICE_URL', 'http://rdv-backend:5005')
-    
-    PORTS = {
-        "AUTH": 5009,
-        "PATIENTS": 5001,
-        "DOCTORS": 5000,
-        "RDV": 5005
+// URLs des services en développement (localhost)
+const DEV_URLS = {
+  AUTH: 'http://localhost:5009',
+  PATIENTS: 'http://localhost:5001',
+  DOCTORS: 'http://localhost:5000',
+  DOCTORS_FRONTEND: 'http://localhost:3000',
+  RDV: 'http://localhost:5005'
+};
+
+// URLs des services avec Tailscale
+const TAILSCALE_URLS = {
+  AUTH: 'http://100.119.228.76:5009',
+  PATIENTS: 'http://100.83.82.128:5001',
+  DOCTORS: 'http://100.95.250.126:5000',
+  DOCTORS_FRONTEND: 'http://100.95.250.126:3000',
+  RDV: 'http://100.125.192.97:5005'
+};
+
+// URLs des services avec Docker
+const DOCKER_URLS = {
+  AUTH: 'http://auth-service:5009',
+  PATIENTS: 'http://patients-service:5001',
+  DOCTORS: 'http://doctors-service:5000',
+  DOCTORS_FRONTEND: 'http://doctors-frontend:3000',
+  RDV: 'http://rdv-backend:5005'
+};
+
+// Sélection de la configuration selon l'environnement
+let ACTIVE_URLS = DEV_URLS;
+
+// Vous pouvez changer ceci manuellement selon votre environnement
+const ENVIRONMENT = 'development'; // 'development' | 'tailscale' | 'docker'
+
+switch(ENVIRONMENT) {
+  case 'tailscale':
+    ACTIVE_URLS = TAILSCALE_URLS;
+    break;
+  case 'docker':
+    ACTIVE_URLS = DOCKER_URLS;
+    break;
+  default:
+    ACTIVE_URLS = DEV_URLS;
+}
+
+// Export de la configuration
+export const CONFIG = {
+  ENVIRONMENT,
+  URLS: ACTIVE_URLS,
+  
+  // Helper functions
+  getServiceUrl: (serviceName) => {
+    return ACTIVE_URLS[serviceName.toUpperCase()] || ACTIVE_URLS.AUTH;
+  },
+  
+  // Navigation helpers
+  goToService: (serviceName) => {
+    const url = ACTIVE_URLS[serviceName.toUpperCase()];
+    if (url) {
+      window.location.href = url;
+    } else {
+      console.error(`Service ${serviceName} not found`);
     }
-else:
-    # Tailscale IPs for local development
-    AUTH_IP = "100.119.228.76"
-    PATIENTS_IP = "100.83.82.128"
-    DOCTORS_IP = "100.95.250.126"
-    RDV_IP = "100.125.192.97"
-    
-    PORTS = {
-        "AUTH": 5009,
-        "PATIENTS": 5001,
-        "DOCTORS": 5000,
-        "RDV": 5005
-    }
-    
-    AUTH_URL = f"http://{AUTH_IP}:{PORTS['AUTH']}"
-    PATIENTS_URL = f"http://{PATIENTS_IP}:{PORTS['PATIENTS']}"
-    DOCTORS_URL = f"http://{DOCTORS_IP}:{PORTS['DOCTORS']}"
-    RDV_URL = f"http://{RDV_IP}:{PORTS['RDV']}"
+  },
+  
+  goToHome: () => {
+    window.location.href = ACTIVE_URLS.AUTH;
+  }
+};
+
+export default CONFIG;
