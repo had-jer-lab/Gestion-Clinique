@@ -6,6 +6,8 @@ import DoctorSpace from './pages/DoctorSpace';
 import EditDoctor from './pages/EditDoctor';
 import PatientDetail from './pages/PatientDetail';
 
+// استبدل قسم Sidebar في App.jsx بهذا
+
 function Sidebar() {
   const location = useLocation();
   
@@ -58,14 +60,14 @@ function Sidebar() {
           <p className="text-xs text-gray-500 uppercase font-semibold mb-3 px-3">Autres Services</p>
           
           <a 
-            href="http://localhost:5001"
+            href="http://localhost:3001"
             className="sidebar-link flex items-center p-3 rounded-xl transition-all"
           >
             👥 Patients
           </a>
 
           <a 
-            href="http://localhost:5005"
+            href="http://localhost:3002"
             className="sidebar-link flex items-center p-3 rounded-xl transition-all"
           >
             📅 Rendez-vous
@@ -75,7 +77,6 @@ function Sidebar() {
     </aside>
   );
 }
-
 function App() {
   return (
     <Router>

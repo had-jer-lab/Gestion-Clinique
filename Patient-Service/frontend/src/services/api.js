@@ -1,6 +1,17 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+// استخدام window.location.hostname للحصول على الـ hostname الحالي
+const getApiBaseUrl = () => {
+  const hostname = window.location.hostname;
+  // في حالة Development (localhost/127.0.0.1)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+  }
+  // في حالة Production/Docker - استخدام نفس الـ hostname مع port 5001
+  return `http://${hostname}:5001/api`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,

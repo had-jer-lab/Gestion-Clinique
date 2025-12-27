@@ -40,4 +40,7 @@ DATABASE_URI = os.getenv('DATABASE_URI', 'sqlite:///instance/base.db')
 SECRET_KEY = os.getenv('SECRET_KEY', 'clinique2025')
 
 print(f"🔧 Configuration chargée - Mode: {'DOCKER' if USE_DOCKER else 'DEVELOPMENT'}")
+print(f"📍 AUTH_URL: {AUTH_URL}")
+print(f"📍 PATIENTS_URL: {PATIENTS_URL}")
 print(f"📍 DOCTORS_URL: {DOCTORS_URL}")
+print(f"📍 RDV_URL: {RDV_URL}")

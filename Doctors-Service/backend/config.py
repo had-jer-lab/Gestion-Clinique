@@ -6,15 +6,6 @@ import os
 
 # Détection automatique de l'environnement
 USE_DOCKER = os.getenv('USE_DOCKER', 'false').lower() == 'true'
-USE_TAILSCALE = os.getenv('USE_TAILSCALE', 'false').lower() == 'true'
-
-# URLs des services avec Tailscale
-TAILSCALE_IPS = {
-    "AUTH": "http://100.119.228.76:5009",
-    "PATIENTS": "http://100.83.82.128:5001",
-    "DOCTORS": "http://100.95.250.126:5000",
-    "RDV": "http://100.125.192.97:5005",
-}
 
 # URLs en développement local
 LOCAL_URLS = {
@@ -35,16 +26,10 @@ DOCKER_URLS = {
 # Sélection de la configuration selon l'environnement
 if USE_DOCKER:
     print("🐳 Mode DOCKER activé")
-    AUTH_URL = DOCKER_URLS["AUTH"]
-    PATIENTS_URL = DOCKER_URLS["PATIENTS"]
-    DOCTORS_URL = DOCKER_URLS["DOCTORS"]
-    RDV_URL = DOCKER_URLS["RDV"]
-elif USE_TAILSCALE:
-    print("🔗 Mode TAILSCALE activé")
-    AUTH_URL = TAILSCALE_IPS["AUTH"]
-    PATIENTS_URL = TAILSCALE_IPS["PATIENTS"]
-    DOCTORS_URL = TAILSCALE_IPS["DOCTORS"]
-    RDV_URL = TAILSCALE_IPS["RDV"]
+    AUTH_URL = os.getenv('AUTH_URL', DOCKER_URLS["AUTH"])
+    PATIENTS_URL = os.getenv('PATIENTS_URL', DOCKER_URLS["PATIENTS"])
+    DOCTORS_URL = os.getenv('DOCTORS_URL', DOCKER_URLS["DOCTORS"])
+    RDV_URL = os.getenv('RDV_URL', DOCKER_URLS["RDV"])
 else:
     print("💻 Mode DÉVELOPPEMENT LOCAL activé")
     AUTH_URL = LOCAL_URLS["AUTH"]

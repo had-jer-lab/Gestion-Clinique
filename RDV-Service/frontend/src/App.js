@@ -45,28 +45,25 @@ function App() {
 }
 
 function Sidebar({ config }) {
+  // استخدام window.location.hostname للحصول على الروابط الديناميكية
+  const getServiceUrl = (port) => {
+    const hostname = window.location.hostname;
+    return `http://${hostname}:${port}`;
+  };
+
   return (
     <aside className="sidebar">
       <div className="logo">
         <span className="logo-icon">Ⓜ️</span> MediManage
       </div>
       <nav>
-        {config.auth_url && (
-          <a href={config.auth_url} className="nav-link" target="_blank" rel="noopener noreferrer">
-            Home
-          </a>
-        )}
+        <a href={getServiceUrl(3000)} className="nav-link" target="_blank" rel="noopener noreferrer">
+          Doctors
+        </a>
+        <a href={getServiceUrl(3001)} className="nav-link" target="_blank" rel="noopener noreferrer">
+          Patients
+        </a>
         <Link to="/rdv" className="nav-link">Rendez-vous</Link>
-        {config.patients_url && (
-          <a href={config.patients_url} className="nav-link" target="_blank" rel="noopener noreferrer">
-            Patients
-          </a>
-        )}
-        {config.doctors_url && (
-          <a href={config.doctors_url} className="nav-link" target="_blank" rel="noopener noreferrer">
-            Doctors
-          </a>
-        )}
         <Link to="/factures" className="nav-link">Factures</Link>
       </nav>
     </aside>

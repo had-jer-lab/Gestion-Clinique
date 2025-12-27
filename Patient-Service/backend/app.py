@@ -18,13 +18,13 @@ app.secret_key = os.getenv('SECRET_KEY', 'clinique2025')
 # CORS configuration for React frontend
 CORS(app, resources={
     r"/*": {
-        "origins": ["*"],  # En développement
+        "origins": ["*"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"]
     }
 })
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///patients.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'sqlite:///patients.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
@@ -33,9 +33,9 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# External service URLs
-RDV_SERVICE_URL = os.getenv('RDV_SERVICE_URL', "http://localhost:5005")
-DOCTORS_SERVICE_URL = os.getenv('DOCTORS_SERVICE_URL', "http://localhost:5001")
+# External service URLs - استخدام أسماء الـ containers
+RDV_SERVICE_URL = os.getenv('RDV_URL', "http://rdv-backend:5005")
+DOCTORS_SERVICE_URL = os.getenv('DOCTORS_URL', "http://doctors-service:5000")
 
 # ==================== MODELS ====================
 class Patient(db.Model):
@@ -361,5 +361,4 @@ def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
-    
-    app.run(host=0.0.0.0, port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)

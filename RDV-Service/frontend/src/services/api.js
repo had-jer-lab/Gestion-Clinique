@@ -1,13 +1,14 @@
 import axios from 'axios';
 
-// Determine API base URL based on environment
+// استخدام window.location.hostname للحصول على الـ hostname الحالي
 const getApiBaseUrl = () => {
-  // In Docker, use the backend service name
-  if (process.env.NODE_ENV === 'production') {
-    return 'http://rdv-backend:5005/api';
+  const hostname = window.location.hostname;
+  // في حالة Development (localhost/127.0.0.1)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return process.env.REACT_APP_API_URL || 'http://localhost:5005/api';
   }
-  // In development, use localhost or proxy
-  return process.env.REACT_APP_API_URL || 'http://localhost:5005/api';
+  // في حالة Production/Docker - استخدام نفس الـ hostname مع port 5005
+  return `http://${hostname}:5005/api`;
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -17,7 +18,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 seconds timeout
+  timeout: 10000,
 });
 
 // Add response interceptor for better error handling
@@ -106,15 +107,15 @@ export const configAPI = {
 // ========================
 
 export const externalAPI = {
-  // Get all patients - with fallback for different environments
+  // Get all patients - استخدام hostname ديناميكي
   getPatients: async (patientsUrl) => {
     try {
-      // Handle both Docker internal and external URLs
-      const url = patientsUrl.startsWith('http://patients-backend')
-        ? patientsUrl
-        : patientsUrl.replace('http://localhost', 'http://patients-backend');
+      const hostname = window.location.hostname;
+      const url = (hostname === 'localhost' || hostname === '127.0.0.1')
+        ? 'http://localhost:5001/api/patients'
+        : `http://${hostname}:5001/api/patients`;
       
-      const response = await axios.get(`${url}/api/patients`, { 
+      const response = await axios.get(url, { 
         timeout: 5000,
         headers: {
           'Accept': 'application/json'
@@ -127,15 +128,15 @@ export const externalAPI = {
     }
   },
   
-  // Get all doctors - with fallback for different environments
+  // Get all doctors - استخدام hostname ديناميكي
   getDoctors: async (doctorsUrl) => {
     try {
-      // Handle both Docker internal and external URLs
-      const url = doctorsUrl.startsWith('http://doctors-service')
-        ? doctorsUrl
-        : doctorsUrl.replace('http://localhost', 'http://doctors-service');
+      const hostname = window.location.hostname;
+      const url = (hostname === 'localhost' || hostname === '127.0.0.1')
+        ? 'http://localhost:5000/api/doctors'
+        : `http://${hostname}:5000/api/doctors`;
       
-      const response = await axios.get(`${url}/api/doctors`, { 
+      const response = await axios.get(url, { 
         timeout: 5000,
         headers: {
           'Accept': 'application/json'

@@ -60,7 +60,7 @@ function Sidebar({ config }) {
         <ul>
           {config.doctors_url && (
             <li>
-              <a href={config.doctors_url} className="nav-link" target="_blank" rel="noopener noreferrer">
+              <a href={`http://${window.location.hostname}:3000`} className="nav-link" target="_blank" rel="noopener noreferrer">
                 <i className="fas fa-user-md"></i> Doctors
               </a>
             </li>
@@ -72,7 +72,7 @@ function Sidebar({ config }) {
           </li>
           {config.rdv_url && (
             <li>
-              <a href={config.rdv_url} className="nav-link" target="_blank" rel="noopener noreferrer">
+              <a href={`http://${window.location.hostname}:3002`} className="nav-link" target="_blank" rel="noopener noreferrer">
                 <i className="fas fa-calendar-alt"></i> Rendez-vous
               </a>
             </li>

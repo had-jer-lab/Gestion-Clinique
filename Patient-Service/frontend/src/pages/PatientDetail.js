@@ -80,6 +80,12 @@ function PatientDetail() {
     }
   };
 
+  // استخدام window.location.hostname بدلاً من localhost
+  const getRdvUrl = () => {
+    const hostname = window.location.hostname;
+    return `http://${hostname}:3002/ajouter_rdv?patient_id=${patient.id}&nom_patient=${patient.prenom} ${patient.nom}`;
+  };
+
   if (loading) return <div className="loading">Chargement...</div>;
   if (error) return <div className="error">{error}</div>;
   if (!patient) return <div className="error">Patient non trouvé</div>;
@@ -154,7 +160,7 @@ function PatientDetail() {
             </div>
           )}
           <a
-            href={`http://localhost:5005/ajouter_rdv?patient_id=${patient.id}&nom_patient=${patient.prenom} ${patient.nom}`}
+            href={getRdvUrl()}
             className="btn-rdv-small"
             target="_blank"
             rel="noopener noreferrer"

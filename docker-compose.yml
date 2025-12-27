@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Auth Service
   auth-service:
@@ -9,56 +7,118 @@ services:
       - "5009:5009"
     environment:
       - FLASK_APP=app.py
-      - FLASK_ENV=development
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=5009
+      - FLASK_DEBUG=False
       - USE_DOCKER=true
       - SECRET_KEY=${SECRET_KEY:-clinique2025}
-      - DATABASE_URI=${DATABASE_URI:-sqlite:///clinique.db}
+      - DATABASE_URI=${DATABASE_URI:-sqlite:///instance/base.db}
     networks:
       - clinic-network
     volumes:
       - ./Auth-Service:/app
+      - auth-data:/app/instance
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5009/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Doctors Service - Backend
+  doctors-service:
+    build: ./Doctors-Service/backend
+    container_name: doctors-service
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=5000
+      - FLASK_DEBUG=False
+      - USE_DOCKER=true
+      - AUTH_URL=http://auth-service:5009
+      - PATIENTS_URL=http://patients-backend:5001
+      - RDV_URL=http://rdv-backend:5005
+      - SECRET_KEY=${SECRET_KEY:-clinique2025}
+    networks:
+      - clinic-network
+    depends_on:
+      - auth-service
+    volumes:
+      - ./Doctors-Service/backend:/app
+      - doctors-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/doctors"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Doctors Service - Frontend
+  doctors-frontend:
+    build: ./Doctors-Service/frontend
+    container_name: doctors-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://doctors-service:5000/api
+      - VITE_PATIENTS_URL=http://patients-backend:5001
+      - VITE_RDV_URL=http://rdv-backend:5005
+      - VITE_AUTH_URL=http://auth-service:5009
+      - NODE_ENV=production
+    networks:
+      - clinic-network
+    depends_on:
+      - doctors-service
+    volumes:
+      - ./Doctors-Service/frontend:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
     restart: unless-stopped
 
   # Patient Service - Backend
-  patient-backend:
+  patients-backend:
     build: ./Patient-Service/backend
-    container_name: patient-backend
+    container_name: patients-backend
     ports:
       - "5001:5001"
     environment:
       - FLASK_APP=app.py
-      - FLASK_ENV=development
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=5001
+      - FLASK_DEBUG=False
       - USE_DOCKER=true
-      - AUTH_SERVICE_URL=http://auth-service:5009
-      - DOCTORS_SERVICE_URL=http://doctors-service:5000
-      - RDV_SERVICE_URL=http://rdv-backend:5005
+      - AUTH_URL=http://auth-service:5009
+      - DOCTORS_URL=http://doctors-service:5000
+      - RDV_URL=http://rdv-backend:5005
       - SECRET_KEY=${SECRET_KEY:-clinique2025}
       - DATABASE_URI=${DATABASE_URI:-sqlite:///clinique.db}
     networks:
       - clinic-network
     depends_on:
       - auth-service
+      - doctors-service
     volumes:
       - ./Patient-Service/backend:/app
       - patient-uploads:/app/static/uploads
+      - patient-data:/app/instance
     restart: unless-stopped
 
   # Patient Service - Frontend
-  patient-frontend:
+  patients-frontend:
     build: ./Patient-Service/frontend
-    container_name: patient-frontend
+    container_name: patients-frontend
     ports:
       - "3001:3000"
     environment:
-      - REACT_APP_API_URL=http://localhost:5001/api
-      - REACT_APP_AUTH_URL=http://localhost:5009
-      - NODE_ENV=development
-      - WATCHPACK_POLLING=true
-      - CHOKIDAR_USEPOLLING=true
+      - REACT_APP_API_URL=http://patients-backend:5001/api
+      - NODE_ENV=production
     networks:
       - clinic-network
     depends_on:
-      - patient-backend
+      - patients-backend
     volumes:
       - ./Patient-Service/frontend:/app
       - /app/node_modules
@@ -74,21 +134,30 @@ services:
       - "5005:5005"
     environment:
       - FLASK_APP=app.py
-      - FLASK_ENV=development
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=5005
+      - FLASK_DEBUG=False
       - USE_DOCKER=true
-      - AUTH_SERVICE_URL=http://auth-service:5009
-      - PATIENTS_SERVICE_URL=http://patient-backend:5001
-      - DOCTORS_SERVICE_URL=http://doctors-service:5000
+      - AUTH_URL=http://auth-service:5009
+      - PATIENTS_URL=http://patients-backend:5001
+      - DOCTORS_URL=http://doctors-service:5000
       - SECRET_KEY=${SECRET_KEY:-clinique2025}
       - DATABASE_URI=${DATABASE_URI:-sqlite:///clinique.db}
     networks:
       - clinic-network
     depends_on:
       - auth-service
-      - patient-backend
+      - patients-backend
+      - doctors-service
     volumes:
       - ./RDV-Service/backend:/app
+      - rdv-data:/app/instance
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # RDV Service - Frontend
   rdv-frontend:
@@ -97,61 +166,14 @@ services:
     ports:
       - "3002:3000"
     environment:
-      - REACT_APP_API_URL=http://localhost:5005/api
-      - REACT_APP_AUTH_URL=http://localhost:5009
-      - NODE_ENV=development
-      - WATCHPACK_POLLING=true
-      - CHOKIDAR_USEPOLLING=true
+      - REACT_APP_API_URL=http://rdv-backend:5005/api
+      - NODE_ENV=production
     networks:
       - clinic-network
     depends_on:
       - rdv-backend
     volumes:
       - ./RDV-Service/frontend:/app
-      - /app/node_modules
-    stdin_open: true
-    tty: true
-    restart: unless-stopped
-
-  # Doctors Service - Backend
-  doctors-service:
-    build: ./Doctors-Service/backend
-    container_name: doctors-service
-    ports:
-      - "5000:5000"
-    environment:
-      - FLASK_APP=app.py
-      - FLASK_ENV=development
-      - USE_DOCKER=true
-      - AUTH_SERVICE_URL=http://auth-service:5009
-      - SECRET_KEY=${SECRET_KEY:-clinique2025}
-      - DATABASE_URI=${DATABASE_URI:-sqlite:///clinique.db}
-    networks:
-      - clinic-network
-    depends_on:
-      - auth-service
-    volumes:
-      - ./Doctors-Service/backend:/app
-    restart: unless-stopped
-
-  # Doctors Service - Frontend
-  doctors-frontend:
-    build: ./Doctors-Service/frontend
-    container_name: doctors-frontend
-    ports:
-      - "3003:3000"
-    environment:
-      - REACT_APP_API_URL=http://localhost:5000/api
-      - REACT_APP_AUTH_URL=http://localhost:5009
-      - NODE_ENV=development
-      - WATCHPACK_POLLING=true
-      - CHOKIDAR_USEPOLLING=true
-    networks:
-      - clinic-network
-    depends_on:
-      - doctors-service
-    volumes:
-      - ./Doctors-Service/frontend:/app
       - /app/node_modules
     stdin_open: true
     tty: true
@@ -164,3 +186,7 @@ networks:
 
 volumes:
   patient-uploads:
+  auth-data:
+  doctors-data:
+  patient-data:
+  rdv-data:

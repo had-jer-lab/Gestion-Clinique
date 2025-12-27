@@ -34,9 +34,9 @@
 
   <ul class="space-y-3 text-base">
     <li><a href="/directeur/dashboard" class="block hover:text-blue-600 transition">🏠 Tableau de bord</a></li>
-    <li><a href="/api/patients" class="block hover:text-blue-600 transition">👥 Patients</a></li>
-    <li><a href="/api/rdv/factures" class="block hover:text-blue-600 transition">💰 Factures</a></li>
-    <li><a href="/doctors/espace_doctor" class="block hover:text-blue-600 transition">🧑‍⚕️ Médecins</a></li>
+    <li><a href="http://localhost:3001" class="block hover:text-blue-600 transition">👥 Patients</a></li>
+    <li><a href="http://localhost:3002" class="block hover:text-blue-600 transition">💰 Factures</a></li>
+    <li><a href="http://localhost:3000" class="block hover:text-blue-600 transition">🧑‍⚕️ Médecins</a></li>
     <li><a href="/logout" class="block text-red-600 font-bold hover:underline transition">🚪 Déconnexion</a></li>
   </ul>
 </div>
@@ -261,10 +261,10 @@ async function loadFactureStats() {
     const res = await fetch('/api/rdv/stats');
     const data = await res.json();
     
-    document.getElementById("total-factures").textContent = data.total_factures;
-    document.getElementById("total-factures2").textContent = data.total_factures;
+    document.getElementById("total-factures").textContent = data.total_factures || 0;
+    document.getElementById("total-factures2").textContent = data.total_factures || 0;
     document.getElementById("revenu-total").textContent = 
-      data.revenu_total.toLocaleString('fr-FR') + " €";
+      (data.revenu_total || 0).toLocaleString('fr-FR') + " €";
  
     // Chart
     const ctx = document.getElementById("chart").getContext("2d");
@@ -274,8 +274,8 @@ async function loadFactureStats() {
         labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin',
                  'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'],
         datasets: [{
-          label: `Revenu ${data.annee_courante}`,
-          data: data.revenus_mensuels,
+          label: `Revenu ${data.annee_courante || 2025}`,
+          data: data.revenus_mensuels || [0,0,0,0,0,0,0,0,0,0,0,0],
           backgroundColor: "rgba(34,197,94,0.85)",
           borderColor: "#16a34a",
           borderWidth: 2,
